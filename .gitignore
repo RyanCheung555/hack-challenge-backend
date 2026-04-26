@@ -1,15 +1,39 @@
-# Python cache and artifacts
+# Virtual environments
+venv/
+.env/
+.venv/
+
+# Python cache
 __pycache__/
 *.py[cod]
-*.egg-info/
+*.pyo
+
+# SQLite databases
+*.db
+*.sqlite3
+
+# Environment variables / secrets
+.env
+.env.local
+
+# macOS
+.DS_Store
+
+# VS Code
+.vscode/
+
+# JetBrains / PyCharm
+.idea/
+
+# Logs
+*.log
+
+# Coverage / test artifacts
+.coverage
+htmlcov/
 .pytest_cache/
 
-# Virtual environments
-.venv/
-venv/
-env/
-
-# IDE/system files
-.DS_Store
-.idea/
-.vscode/
+# Build artifacts
+dist/
+build/
+*.egg-info/
