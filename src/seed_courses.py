@@ -1,12 +1,10 @@
 import time
-import requests
 
-from db import SessionLocal
-from db import CachedCourse, CourseOffering
+from services.cornell_api import get_subjects, get_classes_for_subject
+from db import SessionLocal, CachedCourse, CourseOffering
 
 ROSTER = "FA26"
-BASE_URL = "https://classes.cornell.edu/api/2.0"
-REQUEST_DELAY = 1.1 
+REQUEST_DELAY = 1.1
 
 
 def safe_int(value, default=0):
@@ -14,40 +12,8 @@ def safe_int(value, default=0):
         return int(float(value))
     except:
         return default
-
-
-def get_subjects():
-    """
-    Fetch all subjects for FA26
-    """
-    url = f"{BASE_URL}/config/subjects.json"
-    params = {"roster": ROSTER}
-
-    response = requests.get(url, params=params)
-    response.raise_for_status()
-
-    data = response.json()
-
-    return [item["value"] for item in data["data"]["subjects"]]
-
-
-def get_classes_for_subject(subject):
-    """
-    Fetch all classes for a subject
-    """
-    url = f"{BASE_URL}/search/classes.json"
-
-    params = {
-        "roster": ROSTER,
-        "subject": subject,
-        "acadCareer[]": "UG"
-    }
-
-    response = requests.get(url, params=params)
-    response.raise_for_status()
-
-    return response.json()
-
+    
+subjects = get_subjects(ROSTER)
 
 def upsert_course(session, cls):
     """
@@ -184,7 +150,7 @@ def insert_offerings(session, course_obj, cls):
 def seed():
     session = SessionLocal()
 
-    subjects = get_subjects()
+    subjects = get_subjects(ROSTER)
     print(f"Found {len(subjects)} subjects")
 
     total_courses = 0
@@ -193,7 +159,7 @@ def seed():
         print(f"Importing {subject}...")
 
         try:
-            payload = get_classes_for_subject(subject)
+            payload = get_classes_for_subject(ROSTER, subject)
             classes = payload["data"]["classes"]
 
             for cls in classes:
