@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Text, ForeignKey, create_engine
+from sqlalchemy import Column, Integer, String, Text, ForeignKey, create_engine, Table
 from sqlalchemy.orm import declarative_base, relationship, sessionmaker
 
 DATABASE_URL = "sqlite:///courses.db"
@@ -8,6 +8,33 @@ SessionLocal = sessionmaker(bind=engine)
 
 Base = declarative_base()
 
+# COMPLETED COURSES
+
+class CompletedCourse(Base):
+    __tablename__ = "completed_courses"
+
+    # avoid duplicate course/user pairs
+    user_id = Column(ForeignKey("users.id"), primary_key=True)
+    course_id = Column(ForeignKey("cached_courses.course_id"), primary_key=True) 
+    # Add a way to e.g. designate CS2112 as completed with CS2110 in major requirements
+
+schedule_offerings_table = Table(
+    "schedule_offerings",
+    Base.metadata,
+    Column("schedule_id", ForeignKey("schedules.id"), primary_key=True),
+    Column("offering_id", ForeignKey("course_offerings.id"), primary_key=True),
+)
+
+class Schedule(Base):
+    __tablename__ = "schedules"
+    
+    id = Column(Integer, primary_key=True)
+    user_id = Column(ForeignKey("users.id")) 
+    planned_offerings = relationship( # planned courses
+        "CourseOffering",
+        secondary=schedule_offerings_table) 
+    # for pcourse in schedule.planned_courses -> pcourse is a CourseOffering
+    # you can access pcourse.course_id for example
 
 # CACHED COURSES
 
