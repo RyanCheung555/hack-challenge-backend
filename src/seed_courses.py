@@ -1,7 +1,8 @@
 import time
 
-from services.cornell_api import get_subjects, get_classes_for_subject
-from db import SessionLocal, CachedCourse, CourseOffering
+from src.services.cornell_api import get_subjects, get_classes_for_subject
+from src.app import create_app
+from src.db import CachedCourse, CourseOffering, db
 
 ROSTER = "FA26"
 REQUEST_DELAY = 1.1
@@ -25,7 +26,7 @@ def upsert_course(session, cls):
     course_code = f"{department}{course_number}"
 
     existing = session.query(CachedCourse).filter_by(
-        course_code=course_code
+        course_id=course_code
     ).first()
 
     title = (
@@ -62,7 +63,7 @@ def upsert_course(session, cls):
 
     if existing:
         existing.department = department
-        existing.course_number = course_number
+        existing.number = course_number
         existing.title = title
         existing.credits = credits
         existing.description = description
@@ -73,15 +74,15 @@ def upsert_course(session, cls):
         return existing
 
     new_course = CachedCourse(
-        course_code=course_code,
+        course_id=course_code,
         department=department,
-        course_number=course_number,
+        number=course_number,
         title=title,
         credits=credits,
         description=description,
         prerequisites=prerequisites,
         corequisites=corequisites,
-        distributions=distributions
+        distributions=distributions,
     )
 
     session.add(new_course)
@@ -148,8 +149,6 @@ def insert_offerings(session, course_obj, cls):
         session.add(offering)
 
 def seed():
-    session = SessionLocal()
-
     subjects = get_subjects(ROSTER)
     print(f"Found {len(subjects)} subjects")
 
@@ -163,22 +162,22 @@ def seed():
             classes = payload["data"]["classes"]
 
             for cls in classes:
-                course_obj = upsert_course(session, cls)
-                insert_offerings(session, course_obj, cls)
+                course_obj = upsert_course(db.session, cls)
+                insert_offerings(db.session, course_obj, cls)
                 total_courses += 1
 
-            session.commit()
+            db.session.commit()
 
         except Exception as e:
-            session.rollback()
+            db.session.rollback()
             print(f"Failed {subject}: {e}")
 
         time.sleep(REQUEST_DELAY)
-
-    session.close()
 
     print(f"Done. Imported approx {total_courses} classes.")
 
 
 if __name__ == "__main__":
-    seed()
+    app = create_app()
+    with app.app_context():
+        seed()
