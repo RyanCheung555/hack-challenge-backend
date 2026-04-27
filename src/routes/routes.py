@@ -1,6 +1,9 @@
 from flask import Blueprint, jsonify, request
 
-from db import MajorRequirement, User, db
+try:
+    from src.db import MajorRequirement, User, db
+except ModuleNotFoundError:
+    from db import MajorRequirement, User, db
 
 main = Blueprint("main", __name__)
 

@@ -1,7 +1,11 @@
 from flask import Flask
 
-from db import db
-from routes.routes import main
+try:
+    from src.db import db
+    from src.routes.routes import main
+except ModuleNotFoundError:
+    from db import db
+    from routes.routes import main
 
 
 def create_app() -> Flask:
