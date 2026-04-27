@@ -1,8 +1,8 @@
 import time
 
-from src.services.cornell_api import get_subjects, get_classes_for_subject
-from src.app import create_app
-from src.db import CachedCourse, CourseOffering, db
+from services.cornell_api import get_subjects, get_classes_for_subject
+from app import create_app
+from db import CachedCourse, CourseOffering, db
 
 ROSTER = "FA26"
 REQUEST_DELAY = 1.1

@@ -1,6 +1,6 @@
 from flask import Blueprint, jsonify, request
 
-from src.db import MajorRequirement, User, db
+from db import MajorRequirement, User, db
 
 main = Blueprint("main", __name__)
 

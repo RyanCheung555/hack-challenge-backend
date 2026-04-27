@@ -1,7 +1,7 @@
 from flask import Flask
 
-from src.db import db
-from src.routes.routes import main
+from db import db
+from routes.routes import main
 
 
 def create_app() -> Flask:

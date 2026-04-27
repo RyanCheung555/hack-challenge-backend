@@ -160,9 +160,13 @@ def init_db():
 
 
 if __name__ == "__main__":
-    from src.app import create_app
+    from flask import Flask
 
-    app = create_app()
+    app = Flask(__name__)
+    app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///courses.db"
+    app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+    db.init_app(app)
+
     with app.app_context():
         init_db()
         print("Database tables created.")
