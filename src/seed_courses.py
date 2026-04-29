@@ -14,8 +14,6 @@ def safe_int(value, default=0):
     except:
         return default
     
-subjects = get_subjects(ROSTER)
-
 def upsert_course(session, cls):
     """
     Insert/update CachedCourse

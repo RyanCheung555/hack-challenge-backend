@@ -1,10 +1,10 @@
 from flask import Flask
 
 try:
-    from src.db import db
+    from src.db import db, init_db
     from src.routes.routes import main
 except ModuleNotFoundError:
-    from db import db
+    from db import db, init_db
     from routes.routes import main
 
 
@@ -16,7 +16,7 @@ def create_app() -> Flask:
     db.init_app(app)
 
     with app.app_context():
-        db.create_all()
+        init_db()
 
     app.register_blueprint(main)
     return app

@@ -1,0 +1,55 @@
+{
+  "requirement_sets": [
+    {
+      "scope": "school",
+      "scope_key": "engineering",
+      "catalog_year": "any",
+      "rules": [
+        {
+          "group_id": "engineering_fws",
+          "rule_type": "required",
+          "title": "First-Year Writing Seminar",
+          "courses": [],
+          "tags": ["FWS"]
+        },
+        {
+          "group_id": "engineering_distribution",
+          "rule_type": "choose_n",
+          "n_required": 2,
+          "title": "Engineering Distribution Requirements",
+          "courses": [],
+          "tags": ["ENG_DIST_SBA", "ENG_DIST_KCM", "ENG_DIST_LAD"]
+        }
+      ]
+    },
+    {
+      "scope": "major",
+      "scope_key": "CS",
+      "catalog_year": "any",
+      "rules": [
+        {
+          "group_id": "cs_core",
+          "rule_type": "required",
+          "title": "CS 2110",
+          "courses": ["CS2110"],
+          "tags": []
+        },
+        {
+          "group_id": "cs_core",
+          "rule_type": "required",
+          "title": "CS 2800",
+          "courses": ["CS2800"],
+          "tags": []
+        },
+        {
+          "group_id": "cs_systems_electives",
+          "rule_type": "choose_n",
+          "n_required": 2,
+          "title": "Systems Electives",
+          "courses": ["CS3410", "CS4410", "CS4414"],
+          "tags": []
+        }
+      ]
+    }
+  ]
+}
