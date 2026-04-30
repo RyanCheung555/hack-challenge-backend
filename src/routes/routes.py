@@ -4,6 +4,7 @@ try:
     from src.db import (
         CachedCourse,
         CompletedCourse,
+        CourseOffering,
         MajorRequirement,
         RequirementCourse,
         RequirementRule,
@@ -15,10 +16,12 @@ try:
     )
     from src.services.recommendations import build_suggestions_for_schedule
     from src.services.requirements import evaluate_requirement_progress
+    from src.services.scheduler import has_conflict_with_schedule
 except ModuleNotFoundError:
     from db import (
         CachedCourse,
         CompletedCourse,
+        CourseOffering,
         MajorRequirement,
         RequirementCourse,
         RequirementRule,
@@ -30,8 +33,37 @@ except ModuleNotFoundError:
     )
     from services.recommendations import build_suggestions_for_schedule
     from services.requirements import evaluate_requirement_progress
+    from services.scheduler import has_conflict_with_schedule
 
 main = Blueprint("main", __name__)
+
+
+def _derive_initial(name: str) -> str:
+    parts = [part for part in (name or "").strip().split() if part]
+    if not parts:
+        return ""
+    if len(parts) == 1:
+        return parts[0][0].upper()
+    return f"{parts[0][0]}{parts[-1][0]}".upper()
+
+
+def _serialize_user(user: User) -> dict:
+    completed_codes = sorted(row.course.course_id.upper() for row in user.completed_courses)
+    return {
+        "id": user.id,
+        "name": user.name,
+        "initial": _derive_initial(user.name),
+        "netid": user.netid,
+        "school": user.school,
+        "college": user.college,
+        "major": user.major,
+        "catalog_year": user.catalog_year,
+        "year": user.year,
+        "target_term": user.target_term,
+        "target_credits_low": user.target_credits_low,
+        "target_credits_high": user.target_credits_high,
+        "completed": completed_codes,
+    }
 
 
 @main.get("/")
@@ -43,32 +75,55 @@ def health_check() -> str:
 def create_user():
     payload = request.get_json(silent=True) or {}
 
-    required_fields = ("name", "major", "year")
+    required_fields = ("name", "major", "year", "college", "netid")
     missing = [field for field in required_fields if payload.get(field) in (None, "")]
+    target_term = payload.get("targetTerm", payload.get("target_term"))
+    target_credits_low = payload.get("targetCreditsLow", payload.get("target_credits_low"))
+    target_credits_high = payload.get("targetCreditsHigh", payload.get("target_credits_high"))
+
+    if target_term in (None, ""):
+        missing.append("targetTerm")
+    if target_credits_low in (None, ""):
+        missing.append("targetCreditsLow")
+    if target_credits_high in (None, ""):
+        missing.append("targetCreditsHigh")
 
     if missing:
         return jsonify({"error": f"Missing required fields: {', '.join(missing)}"}), 400
 
     try:
+        target_credits_low = int(target_credits_low)
+        target_credits_high = int(target_credits_high)
+        if target_credits_low > target_credits_high:
+            return jsonify({"error": "target_credits_low cannot exceed target_credits_high"}), 400
+
+        existing_user = User.query.filter_by(netid=str(payload.get("netid", "")).strip()).first()
+        if existing_user:
+            return jsonify(
+                {
+                    "error": "User with this netid already exists",
+                    "user_id": existing_user.id,
+                    "netid": existing_user.netid,
+                }
+            ), 409
+
         user = User(
             name=str(payload["name"]).strip(),
             school=str(payload.get("school", "unknown")).strip(),
+            college=str(payload.get("college", "")).strip(),
+            netid=str(payload.get("netid", "")).strip(),
             major=str(payload["major"]).strip(),
             catalog_year=str(payload.get("catalog_year", "any")).strip(),
             year=int(payload["year"]),
+            target_term=str(target_term).strip(),
+            target_credits_low=target_credits_low,
+            target_credits_high=target_credits_high,
         )
+        if not user.name or not user.major or not user.college or not user.netid or not user.target_term:
+            return jsonify({"error": "Required string fields cannot be empty"}), 400
         db.session.add(user)
         db.session.commit()
-        return jsonify(
-            {
-                "id": user.id,
-                "name": user.name,
-                "school": user.school,
-                "major": user.major,
-                "catalog_year": user.catalog_year,
-                "year": user.year,
-            }
-        ), 201
+        return jsonify(_serialize_user(user)), 201
     except Exception as exc:
         db.session.rollback()
         return jsonify({"error": str(exc)}), 400
@@ -77,19 +132,7 @@ def create_user():
 @main.get("/users/")
 def list_users():
     users = User.query.all()
-    return jsonify(
-        [
-            {
-                "id": user.id,
-                "name": user.name,
-                "school": user.school,
-                "major": user.major,
-                "catalog_year": user.catalog_year,
-                "year": user.year,
-            }
-            for user in users
-        ]
-    )
+    return jsonify([_serialize_user(user) for user in users])
 
 
 @main.post("/users/<int:user_id>/completed-courses/")
@@ -151,23 +194,85 @@ def create_schedule(user_id):
 def add_schedule_offering(schedule_id):
     payload = request.get_json(silent=True) or {}
     offering_id = payload.get("offering_id")
-    if offering_id is None:
-        return jsonify({"error": "Missing required field: offering_id"}), 400
+    class_nbr = payload.get("class_nbr")
+    if offering_id is None and class_nbr is None:
+        return jsonify({"error": "One of offering_id or class_nbr is required"}), 400
 
     schedule = Schedule.query.get(schedule_id)
     if not schedule:
         return jsonify({"error": "Schedule not found"}), 404
 
+    offering = None
+    if offering_id is not None:
+        offering = db.session.get(CourseOffering, int(offering_id))
+    elif class_nbr is not None:
+        offering = CourseOffering.query.filter_by(
+            semester=schedule.semester,
+            class_nbr=int(class_nbr),
+        ).first()
+
+    if not offering:
+        return jsonify({"error": "Offering not found"}), 404
+
+    planned_offerings = [row.offering for row in schedule.planned_offerings]
+    if has_conflict_with_schedule(offering, planned_offerings):
+        return jsonify({"error": "Offering conflicts with existing schedule"}), 409
+
     existing = ScheduleOffering.query.filter_by(
-        schedule_id=schedule_id, offering_id=int(offering_id)
+        schedule_id=schedule_id, offering_id=offering.id
     ).first()
     if existing:
         return jsonify({"message": "Offering already in schedule"}), 200
 
-    row = ScheduleOffering(schedule_id=schedule_id, offering_id=int(offering_id))
+    added_offerings = []
+    row = ScheduleOffering(schedule_id=schedule_id, offering_id=offering.id)
     db.session.add(row)
+    added_offerings.append(offering.id)
+
+    # Auto-attach one valid discussion section for selected lectures.
+    if (offering.component or "").upper() == "LEC":
+        discussions = (
+            db.session.query(type(offering))
+            .filter_by(
+                course_id=offering.course_id,
+                semester=offering.semester,
+                component="DIS",
+            )
+            .all()
+        )
+
+        existing_offering_ids = {planned.id for planned in planned_offerings}
+        valid_discussions = []
+        for dis in discussions:
+            if dis.id in existing_offering_ids:
+                continue
+            if has_conflict_with_schedule(dis, planned_offerings + [offering]):
+                continue
+            valid_discussions.append(dis)
+
+        if not valid_discussions:
+            db.session.rollback()
+            return jsonify(
+                {
+                    "error": "No valid discussion section available for this lecture",
+                    "offering_id": offering.id,
+                }
+            ), 409
+
+        valid_discussions.sort(key=lambda dis: (dis.section or "", dis.id))
+        chosen_discussion = valid_discussions[0]
+        db.session.add(
+            ScheduleOffering(schedule_id=schedule_id, offering_id=chosen_discussion.id)
+        )
+        added_offerings.append(chosen_discussion.id)
+
     db.session.commit()
-    return jsonify({"id": row.id, "schedule_id": row.schedule_id, "offering_id": row.offering_id}), 201
+    return jsonify(
+        {
+            "schedule_id": schedule_id,
+            "added_offering_ids": added_offerings,
+        }
+    ), 201
 
 
 @main.delete("/schedules/<int:schedule_id>/offerings/<int:offering_id>/")

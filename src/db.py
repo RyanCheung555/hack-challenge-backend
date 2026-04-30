@@ -15,6 +15,11 @@ class User(db.Model):
     major = db.Column(db.String, nullable=False)
     catalog_year = db.Column(db.String, nullable=False, default="unknown")
     year = db.Column(db.Integer, nullable=False)
+    netid = db.Column(db.String, nullable=False, unique=True)
+    college = db.Column(db.String, nullable=False)
+    target_term = db.Column(db.String, nullable=False)
+    target_credits_low = db.Column(db.Integer, nullable=False)
+    target_credits_high = db.Column(db.Integer, nullable=False)
 
     completed_courses = db.relationship(
         "CompletedCourse",
@@ -95,6 +100,9 @@ class CachedCourse(db.Model):
 # COURSE OFFERINGS
 class CourseOffering(db.Model):
     __tablename__ = "course_offerings"
+    __table_args__ = (
+        db.UniqueConstraint("semester", "class_nbr", name="uq_course_offerings_semester_class_nbr"),
+    )
 
     id = db.Column(db.Integer, primary_key=True)
 
@@ -105,6 +113,7 @@ class CourseOffering(db.Model):
     )
 
     semester = db.Column(db.String, nullable=False)
+    class_nbr = db.Column(db.Integer, nullable=False)
     section = db.Column(db.String, nullable=False)
     component = db.Column(db.String)
 

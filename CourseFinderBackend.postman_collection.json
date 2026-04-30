@@ -1,0 +1,317 @@
+{
+  "info": {
+    "_postman_id": "c7c98253-2f97-4d4e-a1ae-e25a560f8306",
+    "name": "CourseFinderBackend Local",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Local API flow for onboarding, completed courses, scheduling, progress, and recommendations. Add offering supports offering_id (internal id) or class_nbr (Cornell class number for schedule semester)."
+  },
+  "item": [
+    {
+      "name": "Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            ""
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Create User",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Avery Chen\",\n  \"netid\": \"ac2847\",\n  \"major\": \"CS\",\n  \"school\": \"engineering\",\n  \"college\": \"Engineering\",\n  \"year\": 2,\n  \"targetTerm\": \"Fall 2026\",\n  \"targetCreditsLow\": 13,\n  \"targetCreditsHigh\": 17\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/users/",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "users",
+            ""
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Create user succeeds', function () {",
+              "  pm.response.to.have.status(201);",
+              "});",
+              "var data = pm.response.json();",
+              "if (data && data.id) {",
+              "  pm.collectionVariables.set('userId', data.id);",
+              "}"
+            ]
+          }
+        }
+      ],
+      "response": []
+    },
+    {
+      "name": "List Users",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/users/",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "users",
+            ""
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Add Completed Course (CS1110)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"course_id\": \"CS1110\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/users/{{userId}}/completed-courses/",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "users",
+            "{{userId}}",
+            "completed-courses",
+            ""
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Create Schedule (FA26)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"semester\": \"FA26\",\n  \"name\": \"My Schedule\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/users/{{userId}}/schedules/",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "users",
+            "{{userId}}",
+            "schedules",
+            ""
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Create schedule succeeds', function () {",
+              "  pm.response.to.have.status(201);",
+              "});",
+              "var data = pm.response.json();",
+              "if (data && data.id) {",
+              "  pm.collectionVariables.set('scheduleId', data.id);",
+              "}"
+            ]
+          }
+        }
+      ],
+      "response": []
+    },
+    {
+      "name": "Add Offering To Schedule",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"offering_id\": {{offeringId}}\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/schedules/{{scheduleId}}/offerings/",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "schedules",
+            "{{scheduleId}}",
+            "offerings",
+            ""
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Add Offering To Schedule (class_nbr, recommended)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"class_nbr\": {{classNbr}}\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/schedules/{{scheduleId}}/offerings/",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "schedules",
+            "{{scheduleId}}",
+            "offerings",
+            ""
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get Progress (with schedule)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/users/{{userId}}/progress/?schedule_id={{scheduleId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "users",
+            "{{userId}}",
+            "progress",
+            ""
+          ],
+          "query": [
+            {
+              "key": "schedule_id",
+              "value": "{{scheduleId}}"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get Suggestions",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/schedules/{{scheduleId}}/suggestions/?limit=25",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "schedules",
+            "{{scheduleId}}",
+            "suggestions",
+            ""
+          ],
+          "query": [
+            {
+              "key": "limit",
+              "value": "25"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Remove Offering From Schedule",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/schedules/{{scheduleId}}/offerings/{{offeringId}}/",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "schedules",
+            "{{scheduleId}}",
+            "offerings",
+            "{{offeringId}}",
+            ""
+          ]
+        }
+      },
+      "response": []
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://127.0.0.1:5000"
+    },
+    {
+      "key": "userId",
+      "value": ""
+    },
+    {
+      "key": "scheduleId",
+      "value": ""
+    },
+    {
+      "key": "offeringId",
+      "value": "1"
+    },
+    {
+      "key": "classNbr",
+      "value": "17236"
+    }
+  ]
+}

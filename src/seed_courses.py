@@ -103,6 +103,9 @@ def insert_offerings(session, course_obj, cls):
         for sec in class_sections:
             section = sec.get("section", "UNKNOWN")
             component = sec.get("ssrComponent", "")
+            class_nbr = safe_int(sec.get("classNbr"), default=0)
+            if not class_nbr:
+                continue
 
             meetings = sec.get("meetings", [])
 
@@ -131,17 +134,25 @@ def insert_offerings(session, course_obj, cls):
 
             # prevent duplicates
             exists = session.query(CourseOffering).filter_by(
-                course_id=course_obj.id,
                 semester=ROSTER,
-                section=section
+                class_nbr=class_nbr,
             ).first()
 
             if exists:
+                exists.course_id = course_obj.id
+                exists.section = section
+                exists.component = component
+                exists.instructor = instructor
+                exists.days = days
+                exists.start_time = start_time
+                exists.end_time = end_time
+                exists.location = location
                 continue
 
             offering = CourseOffering(
                 course_id=course_obj.id,
                 semester=ROSTER,
+                class_nbr=class_nbr,
                 section=section,
                 component=component,
                 instructor=instructor,

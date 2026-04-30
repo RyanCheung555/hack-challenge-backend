@@ -1,71 +1,65 @@
 # CourseFinderBackend
 
-Minimal Flask starter backend.
+Flask backend for user profiles, requirement progress tracking, and schedule/course suggestions.
 
 ## Setup
 
-Setup:
-1. python3 -m venv venv
-2. source venv/bin/activate
-3. python src/db.py
-4. python src/seed_courses.py (course cache from Cornell API)
-5. python src/seed_requirements.py (requirement config seeding)
-6. python run.py
+1. `python3 -m venv venv`
+2. `source venv/bin/activate`
+3. `pip install flask flask-sqlalchemy requests`
+4. `python3 src/seed_courses.py` (cache Cornell course/offering data)
+5. `python3 src/seed_requirements.py` (seed requirement rules)
+6. `python3 src/app.py`
 
-App will start on `http://127.0.0.1:8000/`.
+Server runs at `http://127.0.0.1:5000`.
 
-## Database Design
+## Frontend Integration Guide
 
-Backend Proposed Schema:  
+### Core flow
 
-1. users  
-id: int  
-name: str  
-major: str  
-year: int  
+1. Create/load a user (`POST /users/`, `GET /users/`)
+2. Add completed courses (`POST /users/<user_id>/completed-courses/`)
+3. Create schedule (`POST /users/<user_id>/schedules/`)
+4. Add/remove planned offerings (`POST /schedules/<schedule_id>/offerings/`, `DELETE /schedules/<schedule_id>/offerings/<offering_id>/`)
+5. Read requirement progress (`GET /users/<user_id>/progress/?schedule_id=<schedule_id>`)
+6. Read recommendations (`GET /schedules/<schedule_id>/suggestions/`)
 
-2. completed_courses  
-user_id: int, FK -> User  
-course_id: int, FK -> CachedCourse  
+When adding offerings, send either:
+- `offering_id` (internal DB id), or
+- `class_nbr` (Cornell class number, scoped to schedule semester)
 
-3. schedules  
-id: int  
-user_id: int, FK -> User  
-planned_offerings: relationship -> CourseOffering via a table (schedules.id, course_offerings.id)  
+If a selected offering is a lecture (`LEC`), backend auto-adds the first valid discussion (`DIS`) section that does not conflict with the existing schedule.
 
-4. majors_requirements  
-id: int  
-major: str  
-requirement_group: str  
-requirement_type: str  
-course_id: str  
-group_id: str  
+### Important status mapping (frontend)
 
-5. cached_courses  
-Static course info.  
-id: int  
-course_code: int  
-department: str  
-course_number: int  
-title: str  
-credits: int  
-description: str  
-prerequisites: str  
-corequisites: str  
-distributions: str  
-offerings: relationship -> CourseOffering.course  
+Backend returns progress statuses:
+- `satisfied`
+- `in_progress`
+- `remaining`
 
-6. course_offerings  
-id: int  
-course_id: int, FK -> CachedCourse  
-semester: str  
-section: str  
-instructor: str  
-days: str  
-start_time: str  
-end_time: str  
-location: str  
-course: relationship => CachedCourse.offerings  
+If frontend enum is `COMPLETE | IN_PROGRESS | MISSING | RECOMMENDED`, map:
+- `satisfied -> COMPLETE`
+- `in_progress -> IN_PROGRESS`
+- `remaining -> MISSING`
+- `RECOMMENDED` comes from suggestions endpoint
 
+### User payload fields
 
+`POST /users/` accepts required:
+- `name`
+- `netid`
+- `major`
+- `year` (int)
+- `college`
+- `targetTerm` (or `target_term`)
+- `targetCreditsLow` (or `target_credits_low`)
+- `targetCreditsHigh` (or `target_credits_high`)
+
+Optional:
+- `school`
+- `catalog_year`
+
+`GET /users/` returns:
+- Existing fields: `id`, `name`, `school`, `major`, `catalog_year`, `year`
+- Added fields: `initial`, `netid`, `college`, `target_term`, `target_credits_low`, `target_credits_high`, `completed`
 

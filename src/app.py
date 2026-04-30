@@ -26,6 +26,11 @@ def create_app() -> Flask:
     app.register_blueprint(main)
     return app
 
+
+if __name__ == "__main__":
+    app = create_app()
+    app.run(host="127.0.0.1", port=5000, debug=True)
+
 # This needs merging with other backend initialization, wasn't sure how to do so
 # Completed Courses and Schedule Routes
 
