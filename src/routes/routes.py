@@ -1,4 +1,5 @@
 from flask import Blueprint, jsonify, request
+from typing import Optional
 
 try:
     from src.db import (
@@ -70,6 +71,55 @@ def _serialize_user(user: User) -> dict:
     }
 
 
+def _serialize_course(course: CachedCourse) -> dict:
+    tags = sorted(tag.tag for tag in course.tags)
+    return {
+        "id": course.id,
+        "courseId": course.course_id,
+        "name": course.title,
+        "department": course.department,
+        "courseNumber": course.number,
+        "credits": course.credits,
+        "description": course.description,
+        "prerequisites": course.prerequisites,
+        "corequisites": course.corequisites,
+        "distributions": course.distributions,
+        "tags": tags,
+    }
+
+
+def _serialize_offering(offering: CourseOffering) -> dict:
+    return {
+        "id": offering.id,
+        "semester": offering.semester,
+        "classNbr": offering.class_nbr,
+        "section": offering.section,
+        "component": offering.component,
+        "instructor": offering.instructor,
+        "days": offering.days,
+        "startTime": offering.start_time,
+        "endTime": offering.end_time,
+        "time": (
+            f"{offering.start_time}-{offering.end_time}"
+            if offering.start_time and offering.end_time
+            else None
+        ),
+        "location": offering.location,
+    }
+
+
+def _serialize_course_with_offerings(course: CachedCourse, semester: Optional[str] = None) -> dict:
+    payload = _serialize_course(course)
+    offerings = course.offerings
+    if semester:
+        normalized = semester.strip().upper()
+        offerings = [offering for offering in offerings if (offering.semester or "").upper() == normalized]
+
+    payload["offerings"] = [_serialize_offering(offering) for offering in offerings]
+    payload["open"] = bool(offerings)
+    return payload
+
+
 @main.get("/")
 def health_check() -> str:
     return "CourseFinderBackend is running."
@@ -137,6 +187,64 @@ def create_user():
 def list_users():
     users = User.query.all()
     return jsonify([_serialize_user(user) for user in users])
+
+
+@main.get("/courses")
+def list_courses():
+    query = CachedCourse.query
+
+    subject = request.args.get("subject", type=str)
+    if subject:
+        query = query.filter(CachedCourse.department.ilike(subject.strip()))
+
+    credits = request.args.get("credits", type=int)
+    if credits is not None:
+        query = query.filter(CachedCourse.credits == credits)
+
+    search_term = request.args.get("q", type=str) or request.args.get("search", type=str)
+    if search_term:
+        term = f"%{search_term.strip()}%"
+        query = query.filter(
+            db.or_(
+                CachedCourse.course_id.ilike(term),
+                CachedCourse.title.ilike(term),
+                CachedCourse.description.ilike(term),
+            )
+        )
+
+    courses = query.order_by(CachedCourse.course_id.asc()).all()
+
+    semester = request.args.get("semester", type=str)
+    if semester:
+        normalized = semester.strip().upper()
+        courses = [
+            course for course in courses
+            if any((offering.semester or "").upper() == normalized for offering in course.offerings)
+        ]
+
+    return jsonify([_serialize_course_with_offerings(course, semester=semester) for course in courses])
+
+
+@main.get("/courses/<string:course_id>")
+def get_course(course_id: str):
+    normalized = course_id.strip().upper()
+    course = CachedCourse.query.filter_by(course_id=normalized).first()
+    if not course:
+        return jsonify({"error": "Course not found"}), 404
+    semester = request.args.get("semester", type=str)
+    return jsonify(_serialize_course_with_offerings(course, semester=semester))
+
+
+@main.get("/courses/semesters")
+def list_course_semesters():
+    rows = (
+        db.session.query(CourseOffering.semester)
+        .distinct()
+        .order_by(CourseOffering.semester.asc())
+        .all()
+    )
+    semesters = [row[0] for row in rows if row[0]]
+    return jsonify({"semesters": semesters})
 
 
 @main.post("/users/<int:user_id>/completed-courses/")

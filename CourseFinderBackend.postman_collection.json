@@ -86,6 +86,94 @@
       "response": []
     },
     {
+      "name": "List Courses",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/courses",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "courses"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "List Courses (filtered)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/courses?semester={{semester}}&q={{courseQuery}}&subject={{subject}}&credits={{credits}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "courses"
+          ],
+          "query": [
+            {
+              "key": "semester",
+              "value": "{{semester}}"
+            },
+            {
+              "key": "q",
+              "value": "{{courseQuery}}"
+            },
+            {
+              "key": "subject",
+              "value": "{{subject}}"
+            },
+            {
+              "key": "credits",
+              "value": "{{credits}}"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get Course By ID",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/courses/{{courseId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "courses",
+            "{{courseId}}"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "List Course Semesters",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/courses/semesters",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "courses",
+            "semesters"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
       "name": "Add Completed Course (CS1110)",
       "request": {
         "method": "POST",
@@ -312,6 +400,26 @@
     {
       "key": "classNbr",
       "value": "17236"
+    },
+    {
+      "key": "courseId",
+      "value": "CS1110"
+    },
+    {
+      "key": "semester",
+      "value": "FA26"
+    },
+    {
+      "key": "courseQuery",
+      "value": "intro"
+    },
+    {
+      "key": "subject",
+      "value": "CS"
+    },
+    {
+      "key": "credits",
+      "value": "4"
     }
   ]
 }
