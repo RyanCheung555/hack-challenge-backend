@@ -195,6 +195,40 @@ class ScheduleOffering(db.Model):
 
     schedule = db.relationship("Schedule", back_populates="planned_offerings")
     offering = db.relationship("CourseOffering", back_populates="planned_in")
+    
+def remove_schedule_offering_cascade(schedule_id: int, offering_id: int):
+    """
+    Delete a ScheduleOffering. If it's a LEC, also delete any associated DIS/LAB/PRJ rows in the schedule
+    Returns the number of rows deleted (0 if nothing matched.) 
+    """
+    row = ScheduleOffering.query.filter_by(
+        schedule_id=schedule_id, offering_id=offering_id
+    ).first()
+    if row is None:
+        return 0
+
+    deleted = 0
+    offering = row.offering
+    if (offering.component or "").upper() == "LEC":
+        sibling_rows = (
+            ScheduleOffering.query
+            .join(CourseOffering, ScheduleOffering.offering_id == CourseOffering.id)
+            .filter(
+                ScheduleOffering.schedule_id == schedule_id,
+                CourseOffering.course_id == offering.course_id,
+                CourseOffering.semester == offering.semester,
+                CourseOffering.component == "DIS" or CourseOffering.component == "LAB" or CourseOffering.component == "PRJ",
+                ScheduleOffering.id != row.id,
+            )
+            .all()
+        )
+        for s in sibling_rows:
+            db.session.delete(s)
+            deleted += 1
+    db.session.delete(row)
+    deleted += 1
+    db.session.commit()
+    return deleted
 
 class DistributionSet(db.Model):
     __tablename__ = "distribution_sets"
