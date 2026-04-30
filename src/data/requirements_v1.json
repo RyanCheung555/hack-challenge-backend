@@ -1,55 +1,277 @@
 {
   "requirement_sets": [
+
     {
       "scope": "school",
       "scope_key": "engineering",
       "catalog_year": "any",
       "rules": [
+
         {
-          "group_id": "engineering_fws",
-          "rule_type": "required",
-          "title": "First-Year Writing Seminar",
+          "group_id": "fws",
+          "rule_type": "choose_n",
+          "n_required": 2,
+          "title": "First-Year Writing Seminars",
           "courses": [],
           "tags": ["FWS"]
         },
+
         {
-          "group_id": "engineering_distribution",
-          "rule_type": "choose_n",
-          "n_required": 2,
-          "title": "Engineering Distribution Requirements",
+          "group_id": "liberal_studies",
+          "rule_type": "credits_min",
+          "credits_min": 18,
+          "title": "Liberal Studies",
           "courses": [],
           "tags": ["ENG_DIST_SBA", "ENG_DIST_KCM", "ENG_DIST_LAD"]
+        },
+
+        {
+          "group_id": "math_core",
+          "rule_type": "required",
+          "title": "MATH 1910",
+          "courses": ["MATH1910"],
+          "tags": []
+        },
+        {
+          "group_id": "math_core",
+          "rule_type": "required",
+          "title": "MATH 1920",
+          "courses": ["MATH1920"],
+          "tags": []
+        },
+        {
+          "group_id": "math_core",
+          "rule_type": "required",
+          "title": "Linear Algebra",
+          "courses": ["MATH2940", "MATH2930"],
+          "tags": []
+        },
+
+        {
+          "group_id": "physics",
+          "rule_type": "choose_n",
+          "n_required": 2,
+          "title": "Physics Sequence",
+          "courses": ["PHYS1112", "PHYS1116", "PHYS2213", "PHYS2217"],
+          "tags": []
+        },
+
+        {
+          "group_id": "chem",
+          "rule_type": "choose_n",
+          "n_required": 1,
+          "title": "Chemistry",
+          "courses": ["CHEM2090"],
+          "tags": []
+        },
+
+        {
+          "group_id": "computing",
+          "rule_type": "choose_n",
+          "n_required": 1,
+          "title": "Intro Computing",
+          "courses": ["CS1110", "CS1112"],
+          "tags": []
         }
       ]
     },
+
     {
       "scope": "major",
       "scope_key": "CS",
       "catalog_year": "any",
       "rules": [
+
         {
-          "group_id": "cs_core",
-          "rule_type": "required",
-          "title": "CS 2110",
-          "courses": ["CS2110"],
+          "group_id": "cs_intro",
+          "rule_type": "choose_n",
+          "n_required": 1,
+          "title": "Intro CS",
+          "courses": ["CS1110", "CS1112"],
           "tags": []
         },
+
+        {
+          "group_id": "cs_oop",
+          "rule_type": "choose_n",
+          "n_required": 1,
+          "title": "OOP",
+          "courses": ["CS2110", "CS2112"],
+          "tags": []
+        },
+
         {
           "group_id": "cs_core",
           "rule_type": "required",
           "title": "CS 2800",
-          "courses": ["CS2800"],
+          "courses": ["CS2800", "CS2802"],
           "tags": []
         },
         {
-          "group_id": "cs_systems_electives",
-          "rule_type": "choose_n",
-          "n_required": 2,
-          "title": "Systems Electives",
-          "courses": ["CS3410", "CS4410", "CS4414"],
+          "group_id": "cs_core",
+          "rule_type": "required",
+          "title": "CS 3110",
+          "courses": ["CS3110"],
           "tags": []
+        },
+
+        {
+          "group_id": "systems",
+          "rule_type": "choose_n",
+          "n_required": 1,
+          "title": "Systems",
+          "courses": ["CS3410", "CS3420"],
+          "tags": []
+        },
+
+        {
+          "group_id": "ai",
+          "rule_type": "choose_n",
+          "n_required": 1,
+          "title": "AI / ML",
+          "courses": ["CS3700", "CS3780"],
+          "tags": []
+        },
+
+        {
+          "group_id": "os",
+          "rule_type": "choose_n",
+          "n_required": 1,
+          "title": "Operating Systems",
+          "courses": ["CS4410", "CS4414"],
+          "tags": []
+        },
+
+        {
+          "group_id": "algorithms",
+          "rule_type": "required",
+          "title": "Algorithms",
+          "courses": ["CS4820"],
+          "tags": []
+        },
+
+        {
+          "group_id": "cs_electives",
+          "rule_type": "credits_min",
+          "credits_min": 8,
+          "title": "CS 4000+ Electives",
+          "courses": [],
+          "tags": ["CS_4000"]
+        },
+
+        {
+          "group_id": "technical_electives",
+          "rule_type": "credits_min",
+          "credits_min": 9,
+          "title": "Technical Electives",
+          "courses": [],
+          "tags": ["TECH_ELECTIVE"]
+        },
+
+        {
+          "group_id": "external",
+          "rule_type": "credits_min",
+          "credits_min": 9,
+          "title": "External Specialization",
+          "courses": [],
+          "tags": ["NON_CS_3000"]
+        }
+      ]
+    },
+
+    {
+      "scope": "major",
+      "scope_key": "ECE",
+      "catalog_year": "any",
+      "rules": [
+
+        {
+          "group_id": "ece_core",
+          "rule_type": "required",
+          "title": "ECE 2100",
+          "courses": ["ECE2100"],
+          "tags": []
+        },
+        {
+          "group_id": "ece_core",
+          "rule_type": "required",
+          "title": "ECE 2300",
+          "courses": ["ECE2300"],
+          "tags": []
+        },
+        {
+          "group_id": "ece_core",
+          "rule_type": "required",
+          "title": "ECE 2720",
+          "courses": ["ECE2720"],
+          "tags": []
+        },
+
+        {
+          "group_id": "ece_foundations",
+          "rule_type": "choose_n",
+          "n_required": 3,
+          "title": "ECE Foundations",
+          "courses": ["ECE3030", "ECE3100", "ECE3140", "ECE3150", "ECE3250"],
+          "tags": []
+        },
+
+        {
+          "group_id": "ece_upper",
+          "rule_type": "credits_min",
+          "credits_min": 21,
+          "title": "Upper-level ECE",
+          "courses": [],
+          "tags": ["ECE_3000"]
+        }
+      ]
+    },
+
+    {
+      "scope": "major",
+      "scope_key": "ORIE",
+      "catalog_year": "any",
+      "rules": [
+
+        {
+          "group_id": "orie_core",
+          "rule_type": "required",
+          "title": "ORIE 3300",
+          "courses": ["ORIE3300"],
+          "tags": []
+        },
+        {
+          "group_id": "orie_core",
+          "rule_type": "required",
+          "title": "ORIE 3310",
+          "courses": ["ORIE3310"],
+          "tags": []
+        },
+        {
+          "group_id": "orie_core",
+          "rule_type": "required",
+          "title": "ORIE 3500",
+          "courses": ["ORIE3500"],
+          "tags": []
+        },
+        {
+          "group_id": "orie_core",
+          "rule_type": "required",
+          "title": "ORIE 3510",
+          "courses": ["ORIE3510"],
+          "tags": []
+        },
+
+        {
+          "group_id": "orie_electives",
+          "rule_type": "credits_min",
+          "credits_min": 9,
+          "title": "ORIE Electives",
+          "courses": [],
+          "tags": ["ORIE_4000"]
         }
       ]
     }
+
   ]
 }

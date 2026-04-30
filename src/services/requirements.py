@@ -1,5 +1,39 @@
 from collections import defaultdict
 
+DIST_MAP = {
+    "SBA": {"SCD-AS", "SSC-AS", "D-AG"},
+    "KCM": {"SMR-AS", "BIO-AS", "PHS-AS"},
+    "LAD": {"ALC-AS", "LA-AG", "CA-AG", "HA-AG"}
+}
+
+def build_course_tags(session):
+    from db import CachedCourse  # avoid circular imports
+
+    tags_by_code = {}
+
+    courses = session.query(CachedCourse).all()
+
+    for c in courses:
+        tags = set()
+        dist = (c.distributions or "").upper()
+
+        # map distributions → tags
+        for key, values in DIST_MAP.items():
+            if any(v in dist for v in values):
+                tags.add(f"ENG_DIST_{key}")
+
+        # CS 4000+
+        if c.course_id.startswith("CS"):
+            try:
+                if int(c.course_id[2:]) >= 4000:
+                    tags.add("CS_4000")
+            except:
+                pass
+
+        tags_by_code[c.course_id] = tags
+
+    return tags_by_code
+
 try:
     from src.db import RequirementSet
 except ModuleNotFoundError:

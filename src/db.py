@@ -106,6 +106,7 @@ class CourseOffering(db.Model):
 
     semester = db.Column(db.String, nullable=False)
     section = db.Column(db.String, nullable=False)
+    component = db.Column(db.String)
 
     instructor = db.Column(db.String)
     days = db.Column(db.String)
@@ -266,9 +267,14 @@ def init_db():
 
 if __name__ == "__main__":
     from flask import Flask
+    import os
 
     app = Flask(__name__)
-    app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///courses.db"
+
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    DATABASE_URL = f"sqlite:///{os.path.join(BASE_DIR, 'courses.db')}"
+
+    app.config["SQLALCHEMY_DATABASE_URI"] = DATABASE_URL
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
     db.init_app(app)
 

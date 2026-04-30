@@ -92,59 +92,66 @@ def upsert_course(session, cls):
 def insert_offerings(session, course_obj, cls):
     """
     Insert offerings for a course.
-    Uses enrollGroups from Cornell API.
+    Uses enrollGroups -> classSections -> meetings
     """
 
     enroll_groups = cls.get("enrollGroups", [])
 
     for group in enroll_groups:
-        section = str(group.get("classSections", "UNKNOWN"))
+        class_sections = group.get("classSections", [])
 
-        meetings = group.get("meetings", [])
+        for sec in class_sections:
+            section = sec.get("section", "UNKNOWN")
+            component = sec.get("ssrComponent", "")
 
-        if meetings:
-            meeting = meetings[0]
+            meetings = sec.get("meetings", [])
 
-            days = meeting.get("pattern", "")
-            start_time = meeting.get("timeStart", "")
-            end_time = meeting.get("timeEnd", "")
-            location = meeting.get("facilityDescr", "")
+            if meetings:
+                meeting = meetings[0]
 
-            instructors = meeting.get("instructors", [])
-            instructor = ""
+                days = meeting.get("pattern", "")
+                start_time = meeting.get("timeStart", "")
+                end_time = meeting.get("timeEnd", "")
+                location = meeting.get("facilityDescr", "")
 
-            if instructors:
-                instructor = instructors[0].get("firstName", "") + " " + instructors[0].get("lastName", "")
-                instructor = instructor.strip()
+                instructors = meeting.get("instructors", [])
+                instructor = ""
 
-        else:
-            days = ""
-            start_time = ""
-            end_time = ""
-            location = ""
-            instructor = ""
+                if instructors:
+                    instructor = (
+                        instructors[0].get("firstName", "") + " " +
+                        instructors[0].get("lastName", "")
+                    ).strip()
+            else:
+                days = ""
+                start_time = ""
+                end_time = ""
+                location = ""
+                instructor = ""
 
-        exists = session.query(CourseOffering).filter_by(
-            course_id=course_obj.id,
-            semester=ROSTER,
-            section=section
-        ).first()
+            # prevent duplicates
+            exists = session.query(CourseOffering).filter_by(
+                course_id=course_obj.id,
+                semester=ROSTER,
+                section=section
+            ).first()
 
-        if exists:
-            continue
+            if exists:
+                continue
 
-        offering = CourseOffering(
-            course_id=course_obj.id,
-            semester=ROSTER,
-            section=section,
-            instructor=instructor,
-            days=days,
-            start_time=start_time,
-            end_time=end_time,
-            location=location
-        )
+            offering = CourseOffering(
+                course_id=course_obj.id,
+                semester=ROSTER,
+                section=section,
+                component=component,
+                instructor=instructor,
+                days=days,
+                start_time=start_time,
+                end_time=end_time,
+                location=location
+            )
 
-        session.add(offering)
+            session.add(offering)
 
 def seed():
     subjects = get_subjects(ROSTER)

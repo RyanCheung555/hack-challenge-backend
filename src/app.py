@@ -1,3 +1,4 @@
+import os
 from flask import Flask
 
 try:
@@ -10,7 +11,11 @@ except ModuleNotFoundError:
 
 def create_app() -> Flask:
     app = Flask(__name__)
-    app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///courses.db"
+
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    DATABASE_URL = f"sqlite:///{os.path.join(BASE_DIR, 'courses.db')}"
+
+    app.config["SQLALCHEMY_DATABASE_URI"] = DATABASE_URL
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
     db.init_app(app)
