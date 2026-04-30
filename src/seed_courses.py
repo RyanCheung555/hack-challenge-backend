@@ -13,7 +13,33 @@ def safe_int(value, default=0):
         return int(float(value))
     except:
         return default
-    
+
+
+def derive_credits_from_sections(cls):
+    """
+    Fallback credit heuristic when Cornell catalog credit fields are null.
+    Rule:
+      - If a course has LEC plus any other component (DIS/LAB/PRJ/etc), use 4.
+      - Otherwise use 3.
+    """
+    enroll_groups = cls.get("enrollGroups", [])
+    has_lecture = False
+    has_non_lecture = False
+
+    for group in enroll_groups:
+        class_sections = group.get("classSections", [])
+        for section in class_sections:
+            component = (section.get("ssrComponent") or "").strip().upper()
+            if component == "LEC":
+                has_lecture = True
+            elif component:
+                has_non_lecture = True
+
+    if has_lecture and has_non_lecture:
+        return 4
+    return 3
+
+
 def upsert_course(session, cls):
     """
     Insert/update CachedCourse
@@ -34,10 +60,12 @@ def upsert_course(session, cls):
     )
 
     credits = safe_int(
-        cls.get("unitsMaximum")
-        or cls.get("catalogCredits")
+        cls.get("catalogCredits")
+        or cls.get("unitsMaximum")
         or 0
     )
+    if credits <= 0:
+        credits = derive_credits_from_sections(cls)
 
     description = cls.get("description") or ""
 
