@@ -9,6 +9,7 @@ try:
         RequirementCourse,
         RequirementRule,
         RequirementSet,
+        DistributionSet,
         Schedule,
         ScheduleOffering,
         User,
@@ -26,6 +27,7 @@ except ModuleNotFoundError:
         RequirementCourse,
         RequirementRule,
         RequirementSet,
+        DistributionSet,
         Schedule,
         ScheduleOffering,
         User,
@@ -49,6 +51,7 @@ def _derive_initial(name: str) -> str:
 
 def _serialize_user(user: User) -> dict:
     completed_codes = sorted(row.course.course_id.upper() for row in user.completed_courses)
+    distributions = (user.distributions[0].completed_distributions if user.distributions else [])
     return {
         "id": user.id,
         "name": user.name,
@@ -57,6 +60,7 @@ def _serialize_user(user: User) -> dict:
         "school": user.school,
         "college": user.college,
         "major": user.major,
+        "completed_distributions": distributions,
         "catalog_year": user.catalog_year,
         "year": user.year,
         "target_term": user.target_term,
@@ -159,6 +163,28 @@ def add_completed_course(user_id):
     db.session.commit()
     return jsonify({"user_id": user_id, "course_id": course.course_id}), 201
 
+DISTRIBUTION_FIELDS = ["ALC", "BIO", "ETM", "GLC", "HST", "PHS", "SCD", "SSC", "SDS", "SMR"]
+@main.post("/users/<int:user_id>/distributions/")
+def add_distributions(user_id):
+    data = request.get_json()
+
+    for field in DISTRIBUTION_FIELDS:
+        value = data.get(field)
+        if value is None:
+            value = 0
+
+        if value not in (0, 1, True, False):
+            return jsonify({"error": f"{field} is of invalid format"}), 400
+    ds = DistributionSet.query.filter_by(user_id=user_id).first()
+    if ds is None:
+        ds = DistributionSet(user_id=user_id)
+    for field in DISTRIBUTION_FIELDS:
+        setattr(ds, field, bool(data.get(field, 0)))
+
+    db.session.add(ds)
+    db.session.commit()
+
+    return jsonify({"completed distributions": ds.completed_distributions}), 200    
 
 @main.post("/users/<int:user_id>/schedules/")
 def create_schedule(user_id):

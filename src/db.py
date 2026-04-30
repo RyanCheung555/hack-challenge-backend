@@ -31,6 +31,11 @@ class User(db.Model):
         back_populates="user",
         cascade="all, delete-orphan",
     )
+    distributions = db.relationship(
+        "DistributionSet",
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
 
     def __repr__(self):
         return f"<User {self.id} {self.name} ({self.major} {self.year})>"
@@ -191,6 +196,28 @@ class ScheduleOffering(db.Model):
     schedule = db.relationship("Schedule", back_populates="planned_offerings")
     offering = db.relationship("CourseOffering", back_populates="planned_in")
 
+class DistributionSet(db.Model):
+    __tablename__ = "distribution_sets"
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False, unique=True)
+    ALC = db.Column(db.Boolean, nullable=False) # boolean internally represented as 0/1
+    BIO = db.Column(db.Boolean, nullable=False)
+    ETM = db.Column(db.Boolean, nullable=False)
+    GLC = db.Column(db.Boolean, nullable=False)
+    HST = db.Column(db.Boolean, nullable=False)
+    PHS = db.Column(db.Boolean, nullable=False)
+    SCD = db.Column(db.Boolean, nullable=False)
+    SSC = db.Column(db.Boolean, nullable=False)
+    SDS = db.Column(db.Boolean, nullable=False)
+    SMR = db.Column(db.Boolean, nullable=False)
+    user = db.relationship("User", back_populates="distributions")
+    DISTRIBUTION_FIELDS = ["ALC", "BIO", "ETM", "GLC", "HST", "PHS", "SCD", "SSC", "SDS","SMR"]
+    @property
+    def completed_distributions(self):  
+        return [
+            name for name in self.DISTRIBUTION_FIELDS
+            if getattr(self, name, False)
+        ] # e.g. {"BIO", "GLC"}
 
 class RequirementSet(db.Model):
     __tablename__ = "requirement_sets"
