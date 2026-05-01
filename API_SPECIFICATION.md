@@ -214,7 +214,7 @@ Same shape as List Courses (above). When `semester` is provided, only courses wi
 ## 6. Get Course By ID
 
 Route:
-GET /courses/<courseId>
+GET /courses/`<courseId>`
 
 Query params (optional):
 semester (filter embedded offerings to that term)
@@ -290,7 +290,7 @@ Success response 200:
 ## 8. Add Completed Course
 
 Route:
-POST /users/<userId>/completed-courses/
+POST /users/`<userId>`/completed-courses/
 
 Body:
 course_id (e.g. CS1110, MATH1910)
@@ -345,7 +345,7 @@ Cached course not found 404:
 ## 9. Create Schedule
 
 Route:
-POST /users/<userId>/schedules/
+POST /users/`<userId>`/schedules/
 
 Body:
 semester (e.g. FA26)
@@ -393,7 +393,7 @@ User not found 404:
 ## 10. List User Schedules
 
 Route:
-GET /users/<userId>/schedules/
+GET /users/`<userId>`/schedules/
 
 Query params (optional):
 semester (filter to one term, e.g. FA26)
@@ -432,7 +432,7 @@ User not found 404:
 ## 11. Get Schedule
 
 Route:
-GET /schedules/<scheduleId>/
+GET /schedules/`<scheduleId>`/
 
 Example:
 ```
@@ -495,7 +495,7 @@ Schedule not found 404:
 ## 12. Add Offering To Schedule
 
 Route:
-POST /schedules/<scheduleId>/offerings/
+POST /schedules/`<scheduleId>`/offerings/
 
 Body (use one):
 class_nbr (recommended; Cornell class number from roster data for that term)
@@ -592,7 +592,7 @@ Offering not found 404:
 ## 13. Get Progress
 
 Route:
-GET /users/<userId>/progress/
+GET /users/`<userId>`/progress/
 
 Query params:
 schedule_id (optional; when provided, planned offerings in that schedule count toward in_progress status)
@@ -688,7 +688,7 @@ Schedule does not belong to this user (or doesn't exist) 404:
 ## 14. Get Suggestions
 
 Route:
-GET /schedules/<scheduleId>/suggestions/
+GET /schedules/`<scheduleId>`/suggestions/
 
 Query params:
 limit (default 25)
@@ -759,7 +759,7 @@ Schedule not found 404:
 ## 15. Remove Offering From Schedule
 
 Route:
-DELETE /schedules/<scheduleId>/offerings/
+DELETE /schedules/`<scheduleId>`/offerings/
 
 Body (use one):
 course_id (recommended, e.g. CS1110 — removes the LEC and cascades to its attached sections)
@@ -823,10 +823,10 @@ Offering not in schedule 404:
 ## Typical frontend call sequence
 
 POST /users/ (or restore via GET /users/)  
-POST /users/<id>/completed-courses/ (repeat for onboarding completions)  
-POST /users/<id>/schedules/  
-GET /users/<id>/progress/?schedule_id=...  
-GET /schedules/<id>/suggestions/  
-On "add class" action: POST /schedules/<id>/offerings/ with class_nbr  
-On "remove class" action: DELETE /schedules/<id>/offerings/ with course_id  
+POST /users/`<id>`/completed-courses/ (repeat for onboarding completions)  
+POST /users/`<id>`/schedules/  
+GET /users/`<id>`/progress/?schedule_id=...  
+GET /schedules/`<id>`/suggestions/  
+On "add class" action: POST /schedules/`<id>`/offerings/ with class_nbr  
+On "remove class" action: DELETE /schedules/`<id>`/offerings/ with course_id  
 Re-fetch progress + suggestions after schedule changes  
