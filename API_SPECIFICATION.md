@@ -822,11 +822,11 @@ Offering not in schedule 404:
 
 ## Typical frontend call sequence
 
-POST /users/ (or restore via GET /users/)
-POST /users/<id>/completed-courses/ (repeat for onboarding completions)
-POST /users/<id>/schedules/
-GET /users/<id>/progress/?schedule_id=...
-GET /schedules/<id>/suggestions/
-On "add class" action: POST /schedules/<id>/offerings/ with class_nbr
-On "remove class" action: DELETE /schedules/<id>/offerings/ with course_id
-Re-fetch progress + suggestions after schedule changes
+POST /users/ (or restore via GET /users/)  
+POST /users/<id>/completed-courses/ (repeat for onboarding completions)  
+POST /users/<id>/schedules/  
+GET /users/<id>/progress/?schedule_id=...  
+GET /schedules/<id>/suggestions/  
+On "add class" action: POST /schedules/<id>/offerings/ with class_nbr  
+On "remove class" action: DELETE /schedules/<id>/offerings/ with course_id  
+Re-fetch progress + suggestions after schedule changes  
