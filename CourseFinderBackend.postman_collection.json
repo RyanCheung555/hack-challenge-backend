@@ -1,9 +1,11 @@
 {
   "info": {
-    "_postman_id": "c7c98253-2f97-4d4e-a1ae-e25a560f8306",
+    "_postman_id": "d9e5644f-037e-476d-a511-9206a27d5379",
     "name": "CourseFinderBackend Local",
+    "description": "Local API flow for onboarding, completed courses, scheduling, progress, and recommendations. Add offering supports offering_id (internal id) or class_nbr (Cornell class number for schedule semester).",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-    "description": "Local API flow for onboarding, completed courses, scheduling, progress, and recommendations. Add offering supports offering_id (internal id) or class_nbr (Cornell class number for schedule semester)."
+    "_exporter_id": "53116716",
+    "_collection_link": "https://go.postman.co/collection/53116716-d9e5644f-037e-476d-a511-9206a27d5379?source=collection_link"
   },
   "item": [
     {
@@ -25,6 +27,23 @@
     },
     {
       "name": "Create User",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Create user succeeds', function () {",
+              "  pm.response.to.have.status(201);",
+              "});",
+              "var data = pm.response.json();",
+              "if (data && data.id) {",
+              "  pm.collectionVariables.set('userId', data.id);",
+              "}"
+            ]
+          }
+        }
+      ],
       "request": {
         "method": "POST",
         "header": [
@@ -48,23 +67,6 @@
           ]
         }
       },
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "type": "text/javascript",
-            "exec": [
-              "pm.test('Create user succeeds', function () {",
-              "  pm.response.to.have.status(201);",
-              "});",
-              "var data = pm.response.json();",
-              "if (data && data.id) {",
-              "  pm.collectionVariables.set('userId', data.id);",
-              "}"
-            ]
-          }
-        }
-      ],
       "response": []
     },
     {
@@ -204,6 +206,23 @@
     },
     {
       "name": "Create Schedule (FA26)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Create schedule succeeds', function () {",
+              "  pm.response.to.have.status(201);",
+              "});",
+              "var data = pm.response.json();",
+              "if (data && data.id) {",
+              "  pm.collectionVariables.set('scheduleId', data.id);",
+              "}"
+            ]
+          }
+        }
+      ],
       "request": {
         "method": "POST",
         "header": [
@@ -225,69 +244,6 @@
             "users",
             "{{userId}}",
             "schedules",
-            ""
-          ]
-        }
-      },
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "type": "text/javascript",
-            "exec": [
-              "pm.test('Create schedule succeeds', function () {",
-              "  pm.response.to.have.status(201);",
-              "});",
-              "var data = pm.response.json();",
-              "if (data && data.id) {",
-              "  pm.collectionVariables.set('scheduleId', data.id);",
-              "}"
-            ]
-          }
-        }
-      ],
-      "response": []
-    },
-    {
-      "name": "List User Schedules",
-      "request": {
-        "method": "GET",
-        "header": [],
-        "url": {
-          "raw": "{{baseUrl}}/users/{{userId}}/schedules/?semester={{semester}}",
-          "host": [
-            "{{baseUrl}}"
-          ],
-          "path": [
-            "users",
-            "{{userId}}",
-            "schedules",
-            ""
-          ],
-          "query": [
-            {
-              "key": "semester",
-              "value": "{{semester}}",
-              "description": "Optional: filter to one term (e.g. FA26)"
-            }
-          ]
-        }
-      },
-      "response": []
-    },
-    {
-      "name": "Get Schedule",
-      "request": {
-        "method": "GET",
-        "header": [],
-        "url": {
-          "raw": "{{baseUrl}}/schedules/{{scheduleId}}/",
-          "host": [
-            "{{baseUrl}}"
-          ],
-          "path": [
-            "schedules",
-            "{{scheduleId}}",
             ""
           ]
         }
@@ -409,8 +365,17 @@
       "request": {
         "method": "DELETE",
         "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"offering_id\": {{offeringId}}\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
         "url": {
-          "raw": "{{baseUrl}}/schedules/{{scheduleId}}/offerings/{{offeringId}}/",
+          "raw": "{{baseUrl}}/schedules/{{scheduleId}}/offerings/",
           "host": [
             "{{baseUrl}}"
           ],
@@ -418,7 +383,35 @@
             "schedules",
             "{{scheduleId}}",
             "offerings",
-            "{{offeringId}}",
+            ""
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Remove Offering From Schedule (course_id, recommended)",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"course_id\": {{courseId}}\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/schedules/{{scheduleId}}/offerings/",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "schedules",
+            "{{scheduleId}}",
+            "offerings",
             ""
           ]
         }
