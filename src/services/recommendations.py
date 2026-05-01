@@ -1,5 +1,3 @@
-import re
-
 from sqlalchemy.orm import joinedload
 
 try:
@@ -28,15 +26,6 @@ except ModuleNotFoundError:
     from services.scheduler import has_conflict_with_schedule
 
 
-COURSE_CODE_PATTERN = re.compile(r"\b([A-Z]{2,4}\s?\d{4})\b")
-
-
-def extract_course_codes(text_value: str) -> set[str]:
-    if not text_value:
-        return set()
-    return {match.replace(" ", "").upper() for match in COURSE_CODE_PATTERN.findall(text_value.upper())}
-
-
 def _course_maps():
     courses = CachedCourse.query.options(joinedload(CachedCourse.tags)).all()
     credit_by_code = {}
@@ -61,11 +50,13 @@ def _rule_matches_offering(rule, offering, course_tags_by_code):
     return False
 
 
-def _prereqs_satisfied(offering, completed_codes, planned_codes):
-    required_codes = extract_course_codes(offering.course.prerequisites or "")
-    if not required_codes:
-        return True
-    return required_codes.issubset(completed_codes.union(planned_codes))
+def _catalog_number_sort(number: str) -> int:
+    """Numeric sort key from CachedCourse.number (catalog number)."""
+    s = (number or "").strip()
+    if not s:
+        return 10**9
+    digits = "".join(c for c in s if c.isdigit())
+    return int(digits) if digits else 10**9
 
 
 def build_suggestions_for_schedule(schedule_id: int, limit: int = 25):
@@ -107,13 +98,16 @@ def build_suggestions_for_schedule(schedule_id: int, limit: int = 25):
     query = CourseOffering.query.options(joinedload(CourseOffering.course)).filter_by(semester=schedule.semester)
     candidates = []
     for offering in query.all():
+        if (offering.component or "").strip().upper() != "LEC":
+            continue
         course_code = offering.course.course_id.upper()
         if course_code in completed_codes or course_code in planned_codes:
             continue
         if has_conflict_with_schedule(offering, planned_offerings):
             continue
-        if not _prereqs_satisfied(offering, completed_codes, planned_codes):
-            continue
+        # Prerequisite filtering temporarily disabled
+        # if not _prereqs_satisfied(offering, completed_codes, planned_codes):
+        #     continue
 
         matched_rules = [rule for rule in unmet_rules if _rule_matches_offering(rule, offering, tags_by_code)]
         if not matched_rules:
@@ -129,6 +123,7 @@ def build_suggestions_for_schedule(schedule_id: int, limit: int = 25):
             {
                 "offering_id": offering.id,
                 "course_id": offering.course.course_id,
+                "course_number": offering.course.number,
                 "title": offering.course.title,
                 "semester": offering.semester,
                 "section": offering.section,
@@ -152,5 +147,11 @@ def build_suggestions_for_schedule(schedule_id: int, limit: int = 25):
             }
         )
 
-    candidates.sort(key=lambda row: (row["priority"], row["course_id"], row["section"]))
+    candidates.sort(
+        key=lambda row: (
+            _catalog_number_sort(row.get("course_number")),
+            (row["course_id"] or "").upper(),
+            row["section"] or "",
+        )
+    )
     return {"schedule_id": schedule.id, "suggestions": candidates[:limit], "progress": progress}, 200
