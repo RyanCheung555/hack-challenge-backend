@@ -249,6 +249,52 @@
       "response": []
     },
     {
+      "name": "List User Schedules",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/users/{{userId}}/schedules/?semester={{semester}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "users",
+            "{{userId}}",
+            "schedules",
+            ""
+          ],
+          "query": [
+            {
+              "key": "semester",
+              "value": "{{semester}}",
+              "description": "Optional: filter to one term (e.g. FA26)"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get Schedule",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/schedules/{{scheduleId}}/",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "schedules",
+            "{{scheduleId}}",
+            ""
+          ]
+        }
+      },
+      "response": []
+    },
+    {
       "name": "Add Offering To Schedule",
       "request": {
         "method": "POST",
