@@ -415,7 +415,7 @@ def add_schedule_offering(schedule_id):
             "planned_offerings": [
                 {
                     "offering_id": so.offering_id,
-                    "course_code": so.offering.course.course_id,
+                    "course_id": so.offering.course.course_id,
                     "component": so.offering.component,
                     "section": so.offering.section,
                 }
@@ -425,12 +425,47 @@ def add_schedule_offering(schedule_id):
     ), 201
 
 
-@main.delete("/schedules/<int:schedule_id>/offerings/<int:offering_id>/")
-def remove_schedule_offering(schedule_id, offering_id):
+@main.delete("/schedules/<int:schedule_id>/offerings/")
+def remove_schedule_offering(schedule_id): # course_id e.g. "MATH1920"
+    payload = request.get_json(silent=True) or {}
+    course_id = payload.get("course_id")
+    offering_id = payload.get("offering_id")
+    if offering_id is None and course_id is None:
+        return jsonify({"error": "One of offering or course_id is required"}), 400
+
+    sched = Schedule.query.filter_by(id=schedule_id).first()
+    if sched is None:
+        return jsonify({"error": "Schedule id invalid"}), 404
+    
+    if offering_id is None:
+        offering = ( 
+            CourseOffering.query
+            .join(CachedCourse, CourseOffering.course_id == CachedCourse.id) .filter(
+                CachedCourse.course_id == course_id,
+                CourseOffering.semester == sched.semester,
+                CourseOffering.component == "LEC",
+            )
+            .first()
+        )
+        offering = (CourseOffering.query # will need a refactor if CourseOffering.course_id is changed
+            .join(CachedCourse, CourseOffering.course_id == CachedCourse.id) # CourseOffering.course_id references primary key of CachedCourse, not course code "CS2800"
+            .join(ScheduleOffering, ScheduleOffering.offering_id == CourseOffering.id) 
+            .filter(
+                CachedCourse.course_id == course_id,
+                ScheduleOffering.schedule_id == schedule_id,
+                CourseOffering.component == "LEC",
+            )
+            .first()
+        )
+        if offering is None:
+            return jsonify({"error": "Course not found for this semester"}), 404
+        offering_id = offering.id
+    # else offering_id is left as is
+
     removed = remove_schedule_offering_cascade(schedule_id=schedule_id, offering_id=offering_id)
     if removed == 0:
         return jsonify({"error": "Offering not found in schedule"}), 404
-    return jsonify({"removed": True}), 200
+    return jsonify({"removed": removed}), 200
 
 
 @main.get("/users/<int:user_id>/progress/")

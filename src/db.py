@@ -217,7 +217,7 @@ def remove_schedule_offering_cascade(schedule_id: int, offering_id: int):
                 ScheduleOffering.schedule_id == schedule_id,
                 CourseOffering.course_id == offering.course_id,
                 CourseOffering.semester == offering.semester,
-                CourseOffering.component == "DIS" or CourseOffering.component == "LAB" or CourseOffering.component == "PRJ",
+                CourseOffering.component.in_(["DIS", "LAB", "PRJ"]),
                 ScheduleOffering.id != row.id,
             )
             .all()
