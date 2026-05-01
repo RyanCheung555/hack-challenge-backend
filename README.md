@@ -32,6 +32,31 @@ docker run --rm -p 8080:8080 coursefinder-backend
 
 Server runs at `http://127.0.0.1:8080`.
 
+## API Routes
+
+All routes are registered with no prefix.
+
+- `GET /` - health check
+- `POST /users/` - create user
+- `GET /users/` - list users
+- `GET /courses` - list/filter courses (`subject`, `credits`, `q`/`search`, `semester`)
+- `GET /courses/<course_id>` - get a single course (optional `semester` filter)
+- `GET /courses/semesters` - list semesters with cached offerings
+- `POST /users/<user_id>/completed-courses/` - mark a course completed
+- `POST /users/<user_id>/distributions/` - set completed distributions
+- `POST /users/<user_id>/schedules/` - create a schedule
+- `GET /users/<user_id>/schedules/` - list schedules for a user (optional `semester`)
+- `GET /schedules/<schedule_id>/` - get schedule details
+- `POST /schedules/<schedule_id>/offerings/` - add offering to schedule
+- `DELETE /schedules/<schedule_id>/offerings/` - remove offering from schedule
+- `GET /users/<user_id>/progress/` - get requirement progress (optional `schedule_id`)
+- `GET /schedules/<schedule_id>/suggestions/` - get schedule suggestions
+- `POST /major-requirements/` - create major requirement row
+- `GET /major-requirements/` - list major requirements (optional `major`)
+- `POST /requirements/sets/` - create requirement set
+- `POST /requirements/rules/` - create requirement rule
+- `POST /requirements/rules/<rule_id>/courses/` - attach accepted course or tag to a rule
+
 ## Frontend Integration Guide
 
 ### Core flow
@@ -39,7 +64,7 @@ Server runs at `http://127.0.0.1:8080`.
 1. Create/load a user (`POST /users/`, `GET /users/`)
 2. Add completed courses (`POST /users/<user_id>/completed-courses/`)
 3. Create schedule (`POST /users/<user_id>/schedules/`)
-4. Add/remove planned offerings (`POST /schedules/<schedule_id>/offerings/`, `DELETE /schedules/<schedule_id>/offerings/<offering_id>/`)
+4. Add/remove planned offerings (`POST /schedules/<schedule_id>/offerings/`, `DELETE /schedules/<schedule_id>/offerings/`)
 5. Read requirement progress (`GET /users/<user_id>/progress/?schedule_id=<schedule_id>`)
 6. Read recommendations (`GET /schedules/<schedule_id>/suggestions/`)
 
@@ -47,7 +72,11 @@ When adding offerings, send either:
 - `offering_id` (internal DB id), or
 - `class_nbr` (Cornell class number, scoped to schedule semester)
 
-If a selected offering is a lecture (`LEC`), backend auto-adds the first valid discussion (`DIS`) section that does not conflict with the existing schedule.
+If a selected offering is a lecture (`LEC`), backend auto-adds the first valid non-lecture component per component type (for example `DIS`, `LAB`, `PRJ`) that does not conflict with the existing schedule.
+
+For remove, send JSON body with one of:
+- `offering_id` (specific offering to remove), or
+- `course_id` (course code like `MATH1920`; backend removes the matching lecture and its attached dependent components)
 
 ### Important status mapping (frontend)
 
