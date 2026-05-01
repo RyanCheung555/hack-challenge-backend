@@ -1,0 +1,11 @@
+services:
+  api:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      - PORT=8080
+    volumes:
+      # Persist sqlite DB + allow quick iteration on code
+      - ./src:/app/src
+

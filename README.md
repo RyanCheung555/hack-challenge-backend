@@ -13,6 +13,25 @@ Flask backend for user profiles, requirement progress tracking, and schedule/cou
 
 Server runs at `http://127.0.0.1:5000`.
 
+## Docker
+
+### Docker Compose (recommended)
+
+```bash
+docker compose up --build
+```
+
+Server runs at `http://127.0.0.1:8080`.
+
+### Docker only
+
+```bash
+docker build -t coursefinder-backend .
+docker run --rm -p 8080:8080 coursefinder-backend
+```
+
+Server runs at `http://127.0.0.1:8080`.
+
 ## Frontend Integration Guide
 
 ### Core flow
