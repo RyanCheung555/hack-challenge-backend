@@ -16,6 +16,7 @@ try:
         User,
         db,
     )
+    from src.db import remove_schedule_offering_cascade
     from src.services.recommendations import build_suggestions_for_schedule
     from src.services.requirements import evaluate_requirement_progress
     from src.services.scheduler import has_conflict_with_schedule
@@ -34,6 +35,7 @@ except ModuleNotFoundError:
         User,
         db,
     )
+    from db import remove_schedule_offering_cascade
     from services.recommendations import build_suggestions_for_schedule
     from services.requirements import evaluate_requirement_progress
     from services.scheduler import has_conflict_with_schedule
@@ -364,59 +366,71 @@ def add_schedule_offering(schedule_id):
     added_offerings.append(offering.id)
 
     # Auto-attach one valid discussion section for selected lectures.
-    if (offering.component or "").upper() == "LEC":
-        discussions = (
-            db.session.query(type(offering))
-            .filter_by(
-                course_id=offering.course_id,
-                semester=offering.semester,
-                component="DIS",
+    if (offering.component or "") == "LEC":
+        children = (
+            CourseOffering.query
+            .filter(
+                CourseOffering.course_id == offering.course_id,
+                CourseOffering.semester == offering.semester,
+                CourseOffering.component.isnot(None),
+                CourseOffering.component != "LEC",
             )
             .all()
         )
+        # Bucket candidates by component type: {"DIS": [...], "PRJ": [...], ...}
+        by_component: dict[str, list[CourseOffering]] = {}
+        for c in children:
+            by_component.setdefault((c.component or ""), []).append(c)
 
         existing_offering_ids = {planned.id for planned in planned_offerings}
-        valid_discussions = []
-        for dis in discussions:
-            if dis.id in existing_offering_ids:
+        chosen_dependents = []
+        
+        for comp, options in by_component.items(): # by comp type
+            # If user already has one of this component, skip
+            if any(opt.id in existing_offering_ids for opt in options):
                 continue
-            if has_conflict_with_schedule(dis, planned_offerings + [offering]):
-                continue
-            valid_discussions.append(dis)
-
-        if not valid_discussions:
-            db.session.rollback()
-            return jsonify(
-                {
-                    "error": "No valid discussion section available for this lecture",
+            valid = [
+                opt for opt in options
+                if not has_conflict_with_schedule(opt, planned_offerings+chosen_dependents)
+            ]
+            if not valid:
+                db.session.rollback()
+                return jsonify({
+                    "error": f"No valid {comp} section available for this lecture",
                     "offering_id": offering.id,
-                }
-            ), 409
-
-        valid_discussions.sort(key=lambda dis: (dis.section or "", dis.id))
-        chosen_discussion = valid_discussions[0]
-        db.session.add(
-            ScheduleOffering(schedule_id=schedule_id, offering_id=chosen_discussion.id)
-        )
-        added_offerings.append(chosen_discussion.id)
+                }), 409
+            valid.sort(key=lambda x: (x.section or "", x.id))
+            chosen = valid[0] # first valid section
+            db.session.add(
+                ScheduleOffering(schedule_id=schedule_id, offering_id=chosen.id)
+            )
+            added_offerings.append(chosen.id)
+            chosen_dependents.append(chosen) # add chosen if offering is in fact valid
 
     db.session.commit()
     return jsonify(
         {
             "schedule_id": schedule_id,
             "added_offering_ids": added_offerings,
+            "planned_offerings": [
+                {
+                    "offering_id": so.offering_id,
+                    "course_code": so.offering.course.course_id,
+                    "component": so.offering.component,
+                    "section": so.offering.section,
+                }
+                for so in schedule.planned_offerings
+            ]    
         }
     ), 201
 
 
 @main.delete("/schedules/<int:schedule_id>/offerings/<int:offering_id>/")
 def remove_schedule_offering(schedule_id, offering_id):
-    row = ScheduleOffering.query.filter_by(schedule_id=schedule_id, offering_id=offering_id).first()
-    if not row:
+    removed = remove_schedule_offering_cascade(schedule_id=schedule_id, offering_id=offering_id)
+    if removed == 0:
         return jsonify({"error": "Offering not found in schedule"}), 404
-    db.session.delete(row)
-    db.session.commit()
-    return jsonify({"removed": True})
+    return jsonify({"removed": True}), 200
 
 
 @main.get("/users/<int:user_id>/progress/")
