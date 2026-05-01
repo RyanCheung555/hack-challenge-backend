@@ -15,6 +15,11 @@ RUN pip install --no-cache-dir -r requirements.txt && \
 
 COPY . /app
 
+# Seed local sqlite during image build so Cloud Run starts with data.
+# Note: this is a snapshot at build time.
+RUN python src/seed_courses.py && \
+    python src/seed_requirements.py
+
 EXPOSE 8080
 
 CMD ["gunicorn", "--bind", "0.0.0.0:8080", "--workers", "1", "--threads", "8", "--timeout", "0", "app:app"]
