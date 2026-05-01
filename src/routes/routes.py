@@ -326,6 +326,39 @@ def create_schedule(user_id):
     ), 201
 
 
+def _serialize_schedule_summary(schedule: Schedule) -> dict:
+    return {
+        "id": schedule.id,
+        "user_id": schedule.user_id,
+        "name": schedule.name,
+        "semester": schedule.semester,
+        "status": schedule.status,
+        "planned_count": len(schedule.planned_offerings),
+    }
+
+
+@main.get("/users/<int:user_id>/schedules/")
+def list_user_schedules(user_id):
+    user = User.query.get(user_id)
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+
+    query = Schedule.query.filter_by(user_id=user_id).order_by(
+        Schedule.semester.desc(), Schedule.id.desc()
+    )
+    semester = request.args.get("semester", type=str)
+    if semester:
+        query = query.filter(
+            Schedule.semester == str(semester).strip().upper()
+        )
+    schedules = query.all()
+    return jsonify(
+        {
+            "schedules": [_serialize_schedule_summary(s) for s in schedules],
+        }
+    )
+
+
 @main.post("/schedules/<int:schedule_id>/offerings/")
 def add_schedule_offering(schedule_id):
     payload = request.get_json(silent=True) or {}
@@ -423,6 +456,32 @@ def add_schedule_offering(schedule_id):
             ]    
         }
     ), 201
+
+
+def _serialize_schedule(schedule: Schedule) -> dict:
+    rows = []
+    for so in schedule.planned_offerings:
+        off = so.offering
+        row = _serialize_offering(off)
+        row["offering_id"] = off.id
+        row["course_code"] = off.course.course_id
+        rows.append(row)
+    return {
+        "id": schedule.id,
+        "user_id": schedule.user_id,
+        "name": schedule.name,
+        "semester": schedule.semester,
+        "status": schedule.status,
+        "planned_offerings": rows,
+    }
+
+
+@main.get("/schedules/<int:schedule_id>/")
+def get_schedule(schedule_id):
+    schedule = Schedule.query.get(schedule_id)
+    if not schedule:
+        return jsonify({"error": "Schedule not found"}), 404
+    return jsonify(_serialize_schedule(schedule))
 
 
 @main.delete("/schedules/<int:schedule_id>/offerings/<int:offering_id>/")
